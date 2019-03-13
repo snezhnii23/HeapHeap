@@ -1,0 +1,481 @@
+// Map.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+#include <iostream>
+#include <fstream>
+#include <vector> 
+#include <algorithm>
+#include <string>
+#include <queue>
+
+#define vc vector <int>
+#define ll long long
+#define pr pair<int, int>
+#define vs vector <string>
+
+struct point
+{
+	int x;
+	int y;
+	int az;
+};
+
+using namespace std;
+
+vector <vector<int>> mas(21), arr(21), graph(1000);
+
+vector <pair<pr,pr>> boxes;
+
+int n = 6;
+
+vector <vector <int>> color(500);
+
+void clear()
+{
+	for (int i = 0; i < 21; i++)
+	{
+		arr[i].resize(21);
+		arr[i].assign(21, 0);
+	}
+	return;
+}
+
+void cutch()
+{
+	for (int i = 1; i < n; i++)
+	{
+		pr a, b;
+		a = boxes[i].first;
+		b = boxes[i].second;
+		int lx = min(a.first, b.first);
+		int rx = max(a.first, b.first);
+		int ly = min(a.second, b.second);
+		int ry = max(a.second, b.second);
+		for (int x = lx; x < rx; x++)
+		{
+			for (int y = ly; y < ry; y++)
+			{
+				arr[x][y] = 1;
+			}
+		}
+	}
+}
+
+int num(pr a)
+{
+	return a.second * 21 + a.first;
+}
+
+void build()
+{
+	for (int i = 0; i < 21; i++)
+	{
+		for (int j = 0; j < 21; j++)
+		{
+			if (i > 0)
+			{
+				if (arr[i][j] == 0 || arr[i][j + 1] == 0)
+				{
+					graph[num({ i, j })].push_back(num({ i - 1, j }));
+				}
+			}
+			if (j > 0)
+			{
+				if (arr[i][j] == 0 || arr[i + 1][j] == 0)
+				{
+					graph[num({ i, j })].push_back(num({ i, j - 1 }));
+				}
+			}
+			if (i < 20)
+			{
+				if (arr[i + 1][j] == 0 || arr[i + 1][j + 1] == 0)
+				{
+					graph[num({ i, j })].push_back(num({ i + 1, j }));
+				}
+			}
+			if (j < 20)
+			{
+				if (arr[i][j + 1] == 0 || arr[i + 1][j + 1] == 0)
+				{
+					graph[num({ i, j })].push_back(num({ i, j + 1 }));
+				}
+			}
+		}
+	}
+}
+
+vector <vc> heap;
+
+bool prov(vc arr, int j)
+{
+	for (int i = 0; i < arr.size(); i++)
+	{
+		if (arr[i] == j)
+			return false;
+	}
+	return true;
+}
+
+int st = 0;
+int kol = 0;
+
+void dfs(int j, vector <int> arr, int par, int end)
+{
+	//color[j].resize(500);
+	color[j].assign(500, 0);
+	vc mas = arr;
+	mas.push_back(j);
+	if (j == end)
+	{
+		kol++;
+		cout << kol << "++++++++++++++++++++" << endl;
+		heap.push_back(mas);
+		for (int i = 0; i < mas.size(); i++)
+		{
+			cout << mas[i] << " ";
+		}
+		cout << endl;
+		return;
+	}
+	int x = j % 21;
+	int y = j / 21;
+	color[j][par] = 1;
+	for (int i = 0; i < graph[j].size(); i++)
+	{
+		if (graph[j][i] != par && prov(mas, graph[j][i]) && color[j][i] == 0 && graph[j][i] != st)
+		{
+			dfs(graph[j][i], mas, j, end);
+		}
+	}
+}
+
+vc bfs(int j, int end)
+{
+	queue <pr> q;
+	vc col(500);
+	q.push({ j, -1 });
+	vector <pr> mas;
+	int last = 0;
+	while (!q.empty())
+	{
+		pr w = q.front();
+		mas.push_back(w);
+		q.pop();
+		if (col[w.first] == 0)
+		{
+			int pos = mas.size() - 1;
+			col[w.first] = 1;
+			if (w.first == end)
+			{
+				last = pos;
+				break;
+			}
+			for (int i = 0; i < graph[w.first].size(); i++)
+			{
+				if (col[graph[w.first][i]] == 0)
+				{
+					q.push({ graph[w.first][i], pos });
+				}
+			}
+			/*
+			for (int i = 0; i < 21 * 21; i++)
+			{
+				if (i % 21 == 0)
+				{
+					cout << endl;
+				}
+				cout << col[i] << " ";
+			}
+			*/
+		}
+	}
+	vector <int> arr;
+	pr z = mas[last];
+	while (z.second >= 0)
+	{
+		arr.push_back(z.first);
+		z = mas[z.second];
+	}
+	arr.push_back(z.first);
+	/*
+	for (int i = 0; i < 21 * 21; i++)
+	{
+		if (i % 21 == 0)
+		{
+			cout << endl;
+		}
+		cout << col[i] << " ";
+	}
+	*/
+	cout << endl;
+	return arr;
+}
+
+int Az_Find(int a, int b)
+{
+	if (a == b + 21)
+	{
+		return 0;
+	}
+	else
+	{
+		if (a == b - 1)
+		{
+			return 1;
+		}
+		else
+		{
+			if (a == b - 21)
+			{
+				return 2;
+			}
+			else
+				return 3;
+		}
+	}
+}
+
+void Az_Maker(vs &comm, int az1, int az2)
+{
+	if (az1 == 0)
+	{
+		if (az2 == 1)
+		{
+			comm.push_back("R");
+		}
+		if (az2 == 3)
+		{
+			comm.push_back("L");
+		}
+		if (az2 == 2)
+		{
+			comm.push_back("L");
+			comm.push_back("L");
+		}
+	}
+	if (az1 == 1)
+	{
+		if (az2 == 0)
+		{
+			comm.push_back("L");
+		}
+		if (az2 == 2)
+		{
+			comm.push_back("R");
+		}
+		if (az2 == 3)
+		{
+			comm.push_back("L");
+			comm.push_back("L");
+		}
+	}
+	if (az1 == 2)
+	{
+		if (az2 == 1)
+		{
+			comm.push_back("L");
+		}
+		if (az2 == 3)
+		{
+			comm.push_back("R");
+		}
+		if (az2 == 0)
+		{
+			comm.push_back("L");
+			comm.push_back("L");
+		}
+	}
+	if (az1 == 3)
+	{
+		if (az2 == 2)
+		{
+			comm.push_back("L");
+		}
+		if (az2 == 0)
+		{
+			comm.push_back("R");
+		}
+		if (az2 == 1)
+		{
+			comm.push_back("L");
+			comm.push_back("L");
+		}
+	}
+}
+
+vs wayMaker(point start, point finish)
+{
+	vc way = bfs(num({ start.x, start.y }), num({ finish.x, finish.y }));
+	reverse(way.begin(), way.end());
+
+
+	int mp[21][21];
+	for (int i = 0; i < 21; i++)
+	{
+		for (int j = 0; j < 21; j++)
+		{
+			mp[i][j] = 0;
+		}
+	}
+	for (int i = 0; i < way.size(); i++)
+	{
+		int x = way[i] % 21;
+		int y = way[i] / 21;
+		mp[y][x] = 1;
+	}
+	for (int i = 0; i < 21; i++)
+	{
+		for (int j = 0; j < 21; j++)
+		{
+			cout << mp[i][j] << " ";
+		}
+		cout << endl;
+	}
+
+
+	int azimuth = start.az;
+	vs comm;
+	for (int i = 1; i < way.size(); i++)
+	{
+		int az1 = azimuth;
+		int az2 = Az_Find(way[i - 1], way[i]);
+		if (az1 != az2)
+		{
+			Az_Maker(comm, az1, az2);
+		}
+		azimuth = az2;
+		comm.push_back("F");
+	}
+	if (azimuth != finish.az)
+	{
+		Az_Maker(comm, azimuth, finish.az);
+	}
+
+	for (int i = 0; i < comm.size(); i++)
+	{
+		cout << comm[i];
+	}
+	cout << endl;
+
+	return comm;
+}
+
+bool Can_Go(point a)
+{
+	return true;
+}
+
+point go(vs way, point start)
+{
+	int pos = num({ start.x, start.y });
+	int az = start.az;
+	for (int i = 0; i < way.size(); i++)
+	{
+		if (way[i] == "L")
+		{
+			if (az > 0)
+				az--;
+			else
+				az = 3;
+		}
+		if (way[i] == "R")
+		{
+			az++;
+			az %= 4;
+		}
+		point q;
+		q.x = pos / 21;
+		q.y = pos % 21;
+		q.az = az;
+		if (Can_Go(q))
+		{
+			if (way[i] == "F")
+			{
+				if (az == 0)
+				{
+
+					pos -= 21;
+				}
+				if (az == 1)
+				{
+					pos++;
+				}
+				if (az == 2)
+				{
+					pos += 21;
+				}
+				if (az == 3)
+				{
+					pos--;
+				}
+			}
+		}
+		else
+			return q;
+	}
+	point q;
+	q.x = pos / 21;
+	q.y = pos % 21;
+	q.az = az;
+	return q;
+}
+
+
+int main()
+{
+	pr rd;
+	pr lr;
+
+	point start, finish;
+
+	ifstream fin("cord.txt");
+
+	fin >> start.x >> start.y >> start.az;
+	start.x--;
+	start.y--;
+	fin >> finish.x >> finish.y >> finish.az;
+	finish.x--;
+	finish.y--;
+
+	for (int i = 0; i < n; i++)
+	{
+		fin >> rd.first >> rd.second;
+		rd.first--;
+		rd.second--;
+		fin >> lr.first >> lr.second;
+		lr.first--;
+		lr.second--;
+		boxes.push_back({ rd, lr });
+	}
+	fin.close();
+	clear();
+	cutch();
+	build();
+
+	vs way = wayMaker(start, finish);
+	point t = go(way, start);
+	if (t.x == finish.x && t.y == finish.y)
+	{
+		cout << "Yes" << endl;
+	}
+	else
+		cout << "No" << endl;
+	
+	/*
+	for (int i = 1; i < 21; i++)
+	{
+		cout << " ";
+		for (int j = 1; j < 21; j++)
+		{
+			cout << arr[i][j] << " ";
+		}
+		cout << endl;
+	}
+	*/
+
+	
+
+	return 0;
+}
+
