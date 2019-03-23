@@ -23,11 +23,12 @@ struct point
 
 using namespace std;
 
-vector <vector<int>> mas(21), arr(21), graph(1000);
+vector <vector<int>> mas(21), arr(21), arr2(21), graph(1000), graf(1000);
 
 vector <pair<pr,pr>> boxes;
 
 int n = 6;
+bool bol = 1;
 
 vector <vector <int>> color(500);
 
@@ -37,13 +38,15 @@ void clear()
 	{
 		arr[i].resize(21);
 		arr[i].assign(21, 0);
+		arr2[i].resize(21);
+		arr2[i].assign(21, 0);
 	}
 	return;
 }
 
 void cutch()
 {
-	for (int i = 1; i < n; i++)
+	for (int i = 1; i < n - 2; i++)
 	{
 		pr a, b;
 		a = boxes[i].first;
@@ -62,9 +65,30 @@ void cutch()
 	}
 }
 
+void cutch_map()
+{
+	for (int i = 1; i < n; i++)
+	{
+		pr a, b;
+		a = boxes[i].first;
+		b = boxes[i].second;
+		int lx = min(a.first, b.first);
+		int rx = max(a.first, b.first);
+		int ly = min(a.second, b.second);
+		int ry = max(a.second, b.second);
+		for (int x = lx; x < rx; x++)
+		{
+			for (int y = ly; y < ry; y++)
+			{
+				arr2[x][y] = 1;
+			}
+		}
+	}
+}
+
 int num(pr a)
 {
-	return a.second * 21 + a.first;
+	return a.first * 21 + a.second;
 }
 
 void build()
@@ -99,6 +123,44 @@ void build()
 				if (arr[i][j + 1] == 0 || arr[i + 1][j + 1] == 0)
 				{
 					graph[num({ i, j })].push_back(num({ i, j + 1 }));
+				}
+			}
+		}
+	}
+}
+
+void build_map()
+{
+	for (int i = 0; i < 21; i++)
+	{
+		for (int j = 0; j < 21; j++)
+		{
+			if (i > 0)
+			{
+				if (arr2[i][j] == 0 || arr2[i][j + 1] == 0)
+				{
+					graf[num({ i, j })].push_back(num({ i - 1, j }));
+				}
+			}
+			if (j > 0)
+			{
+				if (arr2[i][j] == 0 || arr2[i + 1][j] == 0)
+				{
+					graf[num({ i, j })].push_back(num({ i, j - 1 }));
+				}
+			}
+			if (i < 20)
+			{
+				if (arr2[i + 1][j] == 0 || arr2[i + 1][j + 1] == 0)
+				{
+					graf[num({ i, j })].push_back(num({ i + 1, j }));
+				}
+			}
+			if (j < 20)
+			{
+				if (arr2[i][j + 1] == 0 || arr2[i + 1][j + 1] == 0)
+				{
+					graf[num({ i, j })].push_back(num({ i, j + 1 }));
 				}
 			}
 		}
@@ -320,9 +382,9 @@ vs wayMaker(point start, point finish)
 	}
 	for (int i = 0; i < way.size(); i++)
 	{
-		int x = way[i] % 21;
-		int y = way[i] / 21;
-		mp[y][x] = 1;
+		int x = way[i] / 21;
+		int y = way[i] % 21;
+		mp[x][y] = 1;
 	}
 	for (int i = 0; i < 21; i++)
 	{
@@ -363,7 +425,117 @@ vs wayMaker(point start, point finish)
 
 bool Can_Go(point a)
 {
-	return true;
+	int pos = num({ a.x, a.y });
+	int mas[3];
+	mas[0] = 0;
+	mas[1] = 0;
+	mas[2] = 0;
+	if (a.az == 0)
+	{
+		for (int i = 0; i < graf[pos].size(); i++)
+		{
+			if (graf[pos][i] == pos - 21)
+				mas[1] = 1;
+			if (graf[pos][i] == pos + 1)
+				mas[2] = 1;
+			if (graf[pos][i] == pos - 1)
+				mas[0] = 1;
+		}
+	}
+	if (a.az == 1)
+	{
+		for (int i = 0; i < graf[pos].size(); i++)
+		{
+			if (graf[pos][i] == pos + 1)
+				mas[1] = 1;
+			if (graf[pos][i] == pos + 21)
+				mas[2] = 1;
+			if (graf[pos][i] == pos - 21)
+				mas[0] = 1;
+		}
+	}
+	if (a.az == 2)
+	{
+		for (int i = 0; i < graf[pos].size(); i++)
+		{
+			if (graf[pos][i] == pos + 21)
+				mas[1] = 1;
+			if (graf[pos][i] == pos - 1)
+				mas[2] = 1;
+			if (graf[pos][i] == pos + 1)
+				mas[0] = 1;
+		}
+	}
+	if (a.az == 3)
+	{
+		for (int i = 0; i < graf[pos].size(); i++)
+		{
+			if (graf[pos][i] == pos - 1)
+				mas[1] = 1;
+			if (graf[pos][i] == pos - 21)
+				mas[2] = 1;
+			if (graf[pos][i] == pos + 21)
+				mas[0] = 1;
+		}
+	}
+	if (mas[1] == 1)
+		return true;
+	else
+	{
+		if (a.az == 0)
+		{
+			int sz = graph[pos].size();
+			for (int i = 0; i < sz; i++)
+			{
+				if (graph[pos][i] == pos - 21)
+				{
+					graph[pos][i] = graph[pos][sz - 1];
+					graph[pos].pop_back();
+					return false;
+				}
+			}
+		}
+		if (a.az == 1)
+		{
+			int sz = graph[pos].size();
+			for (int i = 0; i < sz; i++)
+			{
+				if (graph[pos][i] == pos + 1)
+				{
+					graph[pos][i] = graph[pos][sz - 1];
+					graph[pos].pop_back();
+					return false;
+				}
+			}
+		}
+		if (a.az == 2)
+		{
+			int sz = graph[pos].size();
+			for (int i = 0; i < sz; i++)
+			{
+				if (graph[pos][i] == pos + 21)
+				{
+					graph[pos][i] = graph[pos][sz - 1];
+					graph[pos].pop_back();
+					return false;
+				}
+			}
+		}
+		if (a.az == 3)
+		{
+			int sz = graph[pos].size();
+			for (int i = 0; i < sz; i++)
+			{
+				if (graph[pos][i] == pos - 1)
+				{
+					graph[pos][i] = graph[pos][sz - 1];
+					graph[pos].pop_back();
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 }
 
 point go(vs way, point start)
@@ -388,6 +560,7 @@ point go(vs way, point start)
 		q.x = pos / 21;
 		q.y = pos % 21;
 		q.az = az;
+		bol = 1;
 		if (Can_Go(q))
 		{
 			if (way[i] == "F")
@@ -451,30 +624,38 @@ int main()
 	fin.close();
 	clear();
 	cutch();
+	cutch_map();
 	build();
+	build_map();
 
-	vs way = wayMaker(start, finish);
-	point t = go(way, start);
-	if (t.x == finish.x && t.y == finish.y)
-	{
-		cout << "Yes" << endl;
-	}
-	else
-		cout << "No" << endl;
-	
-	/*
 	for (int i = 1; i < 21; i++)
 	{
 		cout << " ";
 		for (int j = 1; j < 21; j++)
 		{
-			cout << arr[i][j] << " ";
+			cout << arr2[i][j] << " ";
 		}
 		cout << endl;
 	}
-	*/
 
-	
+	point t = start;
+	while (t.x != finish.x || t.y != finish.y || t.az != finish.az)
+	{
+		vs way = wayMaker(t, finish);
+		point q = t;
+		t = go(way, t);
+		if (q.x == t.x && q.y == t.y)
+		{
+			cout << "No way" << endl;
+			break;
+		}
+		if (t.x == finish.x && t.y == finish.y)
+		{
+			cout << "Yes" << endl;
+		}
+		else
+			cout << "No" << endl;
+	}
 
 	return 0;
 }
